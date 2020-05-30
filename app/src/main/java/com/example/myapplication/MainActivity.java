@@ -30,6 +30,8 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
      CaptureRequest captureRequest;
     TextureView.SurfaceTextureListener surfaceTextureListener;
     File galleryFolder;
-    Button button;
+    FloatingActionButton button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -215,11 +217,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         openBackgroundThread();
-        if (textureView.isAvailable()) {
-            setUpCamera();
-            openCamera();
-        } else {
-            textureView.setSurfaceTextureListener(surfaceTextureListener);
+        if(cameraFacing==cameraFacingBack) {
+            if (textureView.isAvailable()) {
+                setUpCamera();
+                openCamera();
+            } else {
+                textureView.setSurfaceTextureListener(surfaceTextureListener);
+            }
         }
     }
 
@@ -272,31 +276,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onTakePhotoButtonClicked(View view) {
+        button.setBackground(getResources().getDrawable(R.drawable.clicked));
+
         FileOutputStream outputPhoto = null;
         try {
             lock();
             outputPhoto = new FileOutputStream(createImageFile(galleryFolder));
-            textureView.getBitmap()
-                    .compress(Bitmap.CompressFormat.PNG, 100, outputPhoto);
+           Bitmap photo= textureView.getBitmap();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            unlock();
+           // unlock();
             try {
                 if (outputPhoto != null) {
                     outputPhoto.close();
                     closeCamera();
                     closeBackgroundThread();
-                    textureView=textureView2;
-                    cameraFacing=cameraFacingFront;
-                    if (textureView.isAvailable()) {
-                        setUpCamera();
-                        openCamera();
-                    } else {
-                        textureView.setSurfaceTextureListener(surfaceTextureListener);
-                    }
+                   if(cameraFacing==cameraFacingBack) {
+                       textureView = textureView2;
+                       cameraFacing = cameraFacingFront;
+                       if (textureView.isAvailable()) {
+                           setUpCamera();
+                           openCamera();
+                       } else {
+                           textureView.setSurfaceTextureListener(surfaceTextureListener);
+                       }
 
-
+                   }
 
 
                 }
@@ -316,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
 
             cameraCaptureSession.capture(captureRequestBuilder.build(),
                     null, backgroundHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
